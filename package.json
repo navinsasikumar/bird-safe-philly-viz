@@ -15,6 +15,9 @@
     "clean": "gatsby clean"
   },
   "dependencies": {
+    "axios": "^0.24.0",
+    "d3": "^7.1.1",
+    "d3blackbox": "^1.2.0",
     "gatsby": "^4.2.0",
     "react": "^17.0.1",
     "react-dom": "^17.0.1"
