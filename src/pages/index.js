@@ -1,7 +1,13 @@
+/* *
+ * References:
+ *  https://bl.ocks.org/Qizly/8f6ba236b79d9bb03a80
+ *
+ */
+
 import * as React from "react"
 import { graphql } from 'gatsby'
 import * as D3 from 'd3';
-import {useD3} from 'd3blackbox';
+import "../styles/index.css"
 
 
 const getDateOfISOWeek = (w, y) => {
@@ -15,22 +21,19 @@ const getDateOfISOWeek = (w, y) => {
     return ISOweekStart;
 };
 
-const Axis = ({x, y, scale, axisType}) => {
-  const fnName = axisType === 'left' ? 'axisLeft' : 'axisBottom';
-  const ref = useD3(el => D3.select(el).call(D3[fnName](scale)));
-  return <g transform={`translate(${x}, ${y})`} ref={ref} />;
-}
-
 // markup
 const IndexPage = (props) => {
   const observations = props.data.allObs.edges;
   const groupedObs = props.data.grouped.group;
 
-
-  const margin = {top: 10, right: 30, bottom: 30, left: 60};
+  const margin = {top: 30, right: 100, bottom: 30, left: 60};
   const width = 1490 - margin.left - margin.right;
   const height = 440 - margin.top - margin.bottom;
-  const color = 'red';
+
+  const parseDate = D3.timeFormat("%m/%e/%Y").parse;
+  const bisectDate = D3.bisector(d => d.weekYear).left;
+  const formatValue = D3.format(",");
+  const dateFormatter = D3.timeFormat("%m/%d/%y");
 
   const groupedMap = groupedObs.map(years => {
     const year = years.fieldValue;
@@ -61,22 +64,111 @@ const IndexPage = (props) => {
     .x(d => xScale(d.weekYear))
     .y(d => yScale(d.count))
     .curve(D3.curveMonotoneX)
-  (denseData);
+
+  const xAxis = D3.axisBottom()
+    .scale(xScale)
+
+  const yAxis = D3.axisLeft()
+    .scale(yScale)
+
+  const mainRef = React.useRef();
+  const svgRef = React.useRef();
+  const tooltipRef = React.useRef();
+
+  React.useEffect(() => {
+    const tooltip = D3.select(tooltipRef.current)
+      .attr("class", "tooltip")
+      .style("position", "absolute")
+      .style("visibility", "hidden");
+
+    const svg = D3.select(svgRef.current)
+      .append('g')
+      .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+    svg.append("g")
+      .attr("transform", "translate(0," + height + ")")
+      .call(xAxis);
+
+    svg.append("g")
+      .attr("transform", "translate(0, 0)")
+      .attr("class", "y axis")
+      .call(yAxis)
+      .append("text")
+      .attr("transform", "rotate(-90)")
+      .attr("y", 6)
+      .attr("dy", ".71em")
+      .style("text-anchor", "end")
+      .text("Count");
+
+    svg
+      .append('path')
+      .datum(denseData)
+      .attr("fill", "none")
+      .attr("stroke", "steelblue")
+      .attr("stroke-width", 3)
+      .attr("d", linePath);
+
+    const focus = svg.append('g')
+      .attr("class", "focus")
+      .style("display", "none");
+
+    focus.append("circle")
+      .attr("r", 5);
+
+    focus.append("rect")
+      .attr("class", "tooltip")
+      .attr("width", 80)
+      .attr("height", 50)
+      .attr("x", 10)
+      .attr("y", -22)
+      .attr("rx", 4)
+      .attr("ry", 4);
+
+    focus.append("text")
+      .attr("class", "tooltip-date")
+      .attr("x", 18)
+      .attr("y", -2);
+
+    focus.append("text")
+      .attr("x", 18)
+      .attr("y", 18)
+      .text("Count:");
+
+    focus.append("text")
+      .attr("class", "tooltip-count")
+      .style('font-weight', 'bold')
+      .attr("x", 60)
+      .attr("y", 18);
+
+    svg.append("rect")
+      .attr("class", "overlay")
+      .attr("width", width)
+      .attr("height", height)
+      .on("mouseover", function() { focus.style("display", null); })
+      .on("mouseout", function() { focus.style("display", "none"); })
+      .on("mousemove", mousemove);
+
+    function mousemove(event) {
+      const x0 = xScale.invert(D3.pointer(event)[0]);
+      const i = bisectDate(denseData, x0, 1);
+      const d0 = denseData[i - 1];
+      const d1 = denseData[i];
+      const d = x0 - d0.weekYear > d1.weekYear - x0 ? d1 : d0;
+
+      focus.attr("transform", "translate(" + xScale(d.weekYear) + "," + yScale(d.count) + ")");
+      focus.select(".tooltip-date").text(dateFormatter(d.weekYear));
+      focus.select(".tooltip-count").text(formatValue(d.count));
+    }
+
+  }, [mainRef.current]);
+
 
   return (
-    <main>
+    <main ref={mainRef}>
       <title>Bird Safe Philly Data Viz</title>
       <h1>Bird Safe Philly Data Viz</h1>
 
-      <svg width={width + margin.left + margin.right} height={height + margin.top + margin.bottom}>
-        <g transform={`translate(${margin.left}, ${margin.top})`}>
-          <Axis x={0} y={0} scale={yScale} axisType="left"/>
-          <Axis x={0} y={height} scale={xScale} axisType="bottom"/>
-          <path strokeWidth={3} fill="none" stroke={color} d={linePath} />
-          {denseData.map((d, i) => {
-            return (<circle cx={xScale(d.weekYear)} cy={yScale(d.count)} r={3} key={i} />)
-          })}
-        </g>
+      <svg width={width + margin.left + margin.right} height={height + margin.top + margin.bottom} ref={svgRef}>
       </svg>
 
       <div>
