@@ -27,8 +27,9 @@ const IndexPage = (props) => {
   const groupedObs = props.data.grouped.group;
 
 
-  const width = 1400;
-  const height = 400;
+  const margin = {top: 10, right: 30, bottom: 30, left: 60};
+  const width = 1490 - margin.left - margin.right;
+  const height = 440 - margin.top - margin.bottom;
   const color = 'red';
 
   const groupedMap = groupedObs.map(years => {
@@ -45,17 +46,15 @@ const IndexPage = (props) => {
   const sortedData = groupedMap.flat().sort((a, b) => a.weekYear - b.weekYear);
 
   const dates = sortedData.map(e => e.weekYear);
-  const counts = sortedData.map(e => e.count);
-
-  const dateRange = D3.extent(dates);
-
-  const xScale = D3.scaleTime().domain(D3.extent(dates)).range([45, width - 10]);
-  const yScale = D3.scaleLinear().domain(D3.extent(counts)).range([height - 45, 5]);
+  const xScale = D3.scaleTime().domain(D3.extent(dates)).range([0, width]);
 
   const denseData = xScale.ticks(D3.timeMonday).map(d => {
     const found = sortedData.find(e => e.weekYear.getTime() === d.getTime());
     return found || { weekYear: d, count: 0 };
   });
+
+  const counts = denseData.map(e => e.count);
+  const yScale = D3.scaleLinear().domain(D3.extent(counts)).range([height, 0]);
 
   const linePath = D3
     .line()
@@ -69,13 +68,15 @@ const IndexPage = (props) => {
       <title>Bird Safe Philly Data Viz</title>
       <h1>Bird Safe Philly Data Viz</h1>
 
-      <svg width={width} height={height}>
-        <path strokeWidth={3} fill="none" stroke={color} d={linePath} />
-        {denseData.map(d => {
-          return (<circle cx={xScale(d.weekYear)} cy={yScale(d.count)} r={3}/>)
-        })}
-        <Axis x={40} y={0} scale={yScale} axisType="left"/>
-        <Axis x={0} y={height - 40} scale={xScale} axisType="bottom"/>
+      <svg width={width + margin.left + margin.right} height={height + margin.top + margin.bottom}>
+        <g transform={`translate(${margin.left}, ${margin.top})`}>
+          <Axis x={0} y={0} scale={yScale} axisType="left"/>
+          <Axis x={0} y={height} scale={xScale} axisType="bottom"/>
+          <path strokeWidth={3} fill="none" stroke={color} d={linePath} />
+          {denseData.map((d, i) => {
+            return (<circle cx={xScale(d.weekYear)} cy={yScale(d.count)} r={3} key={i} />)
+          })}
+        </g>
       </svg>
 
       <div>
