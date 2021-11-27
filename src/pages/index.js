@@ -30,11 +30,12 @@ const IndexPage = (props) => {
   const width = 1490 - margin.left - margin.right;
   const height = 440 - margin.top - margin.bottom;
 
-  const parseDate = D3.timeFormat("%m/%e/%Y").parse;
+  const parseDate = D3.timeParse("%Y-%m-%d");
   const bisectDate = D3.bisector(d => d.weekYear).left;
   const formatValue = D3.format(",");
   const dateFormatter = D3.timeFormat("%m/%d/%y");
 
+  /*
   const groupedMap = groupedObs.map(years => {
     const year = years.fieldValue;
     const dateCounts = years.group.map(weeks => {
@@ -47,11 +48,23 @@ const IndexPage = (props) => {
   });
 
   const sortedData = groupedMap.flat().sort((a, b) => a.weekYear - b.weekYear);
+  */
+
+  const groupedMap2 = observations.reduce((r, a) => {
+    r[a.node.observed_on] = r[a.node.observed_on] || [];
+    r[a.node.observed_on].push(a.node);
+    return r;
+  }, Object.create(null));
+  const groupedMap3 = Object.keys(groupedMap2).map(e => { return { weekYear: parseDate(e), count: groupedMap2[e].length }; });
+  const sortedData = groupedMap3.sort((a, b) => a.weekYear - b.weekYear);
+
 
   const dates = sortedData.map(e => e.weekYear);
   const xScale = D3.scaleTime().domain(D3.extent(dates)).range([0, width]);
 
-  const denseData = xScale.ticks(D3.timeMonday).map(d => {
+  const dateGrouping = D3.timeDay;
+  // const dateGrouping = D3.timeMonday // Use this is doing weeekly counts
+  const denseData = xScale.ticks(dateGrouping).map(d => {
     const found = sortedData.find(e => e.weekYear.getTime() === d.getTime());
     return found || { weekYear: d, count: 0 };
   });
