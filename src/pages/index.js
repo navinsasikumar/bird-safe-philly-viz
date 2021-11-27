@@ -26,9 +26,10 @@ const IndexPage = (props) => {
   const observations = props.data.allObs.edges;
   const groupedObs = props.data.grouped.group;
 
-  const margin = {top: 30, right: 100, bottom: 30, left: 60};
+  const margin = {top: 30, right: 140, bottom: 80, left: 60};
   const width = 1490 - margin.left - margin.right;
   const height = 440 - margin.top - margin.bottom;
+  const color =  "steelblue";
 
   const parseDate = D3.timeParse("%Y-%m-%d");
   const bisectDate = D3.bisector(d => d.weekYear).left;
@@ -55,9 +56,19 @@ const IndexPage = (props) => {
     r[a.node.observed_on].push(a.node);
     return r;
   }, Object.create(null));
-  const groupedMap3 = Object.keys(groupedMap2).map(e => { return { weekYear: parseDate(e), count: groupedMap2[e].length }; });
-  const sortedData = groupedMap3.sort((a, b) => a.weekYear - b.weekYear);
 
+  const groupedMap3 = Object.keys(groupedMap2).map(e => { return {
+    weekYear: parseDate(e),
+    count: groupedMap2[e].length,
+    species: groupedMap2[e].reduce((r, a) => {
+      r[a.taxon.preferred_common_name] =  r[a.taxon.preferred_common_name] || [];
+      r[a.taxon.preferred_common_name].push(a.taxon);
+      return r;
+    }, Object.create(null))
+  }; });
+
+  const sortedData = groupedMap3.sort((a, b) => a.weekYear - b.weekYear);
+  console.log(sortedData);
 
   const dates = sortedData.map(e => e.weekYear);
   const xScale = D3.scaleTime().domain(D3.extent(dates)).range([0, width]);
@@ -87,12 +98,16 @@ const IndexPage = (props) => {
   const mainRef = React.useRef();
   const svgRef = React.useRef();
   const tooltipRef = React.useRef();
+  const detailsRef = React.useRef();
 
   React.useEffect(() => {
     const tooltip = D3.select(tooltipRef.current)
       .attr("class", "tooltip")
       .style("position", "absolute")
       .style("visibility", "hidden");
+
+    const details = D3.select(detailsRef.current)
+      .attr("class", "details")
 
     const svg = D3.select(svgRef.current)
       .append('g')
@@ -117,7 +132,7 @@ const IndexPage = (props) => {
       .append('path')
       .datum(denseData)
       .attr("fill", "none")
-      .attr("stroke", "steelblue")
+      .attr("stroke", color)
       .attr("stroke-width", 3)
       .attr("d", linePath);
 
@@ -171,7 +186,26 @@ const IndexPage = (props) => {
       focus.attr("transform", "translate(" + xScale(d.weekYear) + "," + yScale(d.count) + ")");
       focus.select(".tooltip-date").text(dateFormatter(d.weekYear));
       focus.select(".tooltip-count").text(formatValue(d.count));
+
+      const speciesLists = d.count > 0 && Object.keys(d.species)
+        .sort((a, b) => d.species[b].length - d.species[a].length)
+        .reduce((r, a) => r += `${a}: ${d.species[a].length}, `, "");
+      const speciesText = d.count > 0
+        ? (`Species: ${speciesLists.replace(/(,\s*$)/g, "")}`)
+        : "";
+
+      details.html("")
+        .append('div')
+        .html(`
+          <h5>${dateFormatter(d.weekYear)}</h5>
+          <p>Total: ${d.count}</p>
+          <p>${speciesText}</p>
+        `);
     }
+
+    // Legend
+    svg.append("circle").attr("cx", 0).attr("cy", height + 30 ).attr("r", 6).style("fill", color);
+    svg.append("text").attr("x", 20).attr("y", height + 30).text("Total observations in project").style("font-size", "15px").attr("alignment-baseline","middle")
 
   }, [mainRef.current]);
 
@@ -181,8 +215,10 @@ const IndexPage = (props) => {
       <title>Bird Safe Philly Data Viz</title>
       <h1>Bird Safe Philly Data Viz</h1>
 
+      <h5 style={{"margin-left": margin.left - 20, "margin-bottom": 0}}>Daily Window Strikes</h5>
       <svg width={width + margin.left + margin.right} height={height + margin.top + margin.bottom} ref={svgRef}>
       </svg>
+      <div ref={detailsRef}></div>
 
       <div>
         {observations.map((obs, i) => {

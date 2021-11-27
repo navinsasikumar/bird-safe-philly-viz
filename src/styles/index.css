@@ -36,3 +36,9 @@
   font-weight: bold;
 }
 
+.details {
+  border: solid gray 1px;
+  border-radius: 4px;
+  padding: 5px;
+  min-height: 170px;
+}
