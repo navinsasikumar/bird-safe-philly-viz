@@ -1,11 +1,17 @@
-<p align="center">
-  <a href="https://www.gatsbyjs.com/?utm_source=starter&utm_medium=readme&utm_campaign=minimal-starter">
-    <img alt="Gatsby" src="https://www.gatsbyjs.com/Gatsby-Monogram.svg" width="60" />
-  </a>
-</p>
-<h1 align="center">
-  Gatsby minimal starter
-</h1>
+# Bird Safe Philly Data Visualizations
+
+Data for visualizations from the [Bird Safe Philly iNaturalist project](https://www.inaturalist.org/projects/bird-safe-philly-bird-strikes-project)
+URL: [https://navinsasikumar.github.io/bird-safe-philly-viz/](https://navinsasikumar.github.io/bird-safe-philly-viz/)
+
+## Deployment
+```
+npm run deploy
+```
+
+This site is deployed to Github pages using the gh-pages npm module. Running
+the above command will create a branch called gh-pages with the built files.
+The project is configured in Github to serve the root of the project from
+remote gh-pages branch.
 
 ## 🚀 Quick start
 

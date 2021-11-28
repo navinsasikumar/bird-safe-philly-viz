@@ -6,4 +6,5 @@ module.exports = {
   plugins: [
     'gatsby-plugin-postcss',
   ],
+  pathPrefix: "/bird-safe-philly-viz",
 };
