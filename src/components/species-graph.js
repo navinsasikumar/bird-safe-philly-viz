@@ -9,7 +9,7 @@ export default function SpeciesGraph({ data }) {
         index < 6 && (
           <div key={index}>
             <p className="pt-4 pl-8">{species.name}</p>
-            <LineChart data={species.dates} height={200}/>
+            <LineChart data={species.dates} height={200} xTicks={4} yTicks={3} />
           </div>
         )
       ))}

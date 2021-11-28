@@ -1,6 +1,7 @@
 # Bird Safe Philly Data Visualizations
 
 Data for visualizations from the [Bird Safe Philly iNaturalist project](https://www.inaturalist.org/projects/bird-safe-philly-bird-strikes-project)
+
 URL: [https://navinsasikumar.github.io/bird-safe-philly-viz/](https://navinsasikumar.github.io/bird-safe-philly-viz/)
 
 ## Deployment

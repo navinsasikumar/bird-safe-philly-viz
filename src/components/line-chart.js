@@ -15,11 +15,17 @@ const accessors = {
   yAccessor: d => d.count,
 };
 
-export default function LineChart({ data, height }) {
+export default function LineChart({
+  data, height, xTicks, yTicks,
+}) {
   return (
     <XYChart height={height} xScale={{ type: 'time' }} yScale={{ type: 'linear' }}>
-      <AnimatedAxis orientation="bottom" />
-      <AnimatedAxis orientation="left" />
+      <AnimatedAxis orientation="bottom" label="Dates" numTicks={xTicks} />
+      <AnimatedAxis
+        orientation="left"
+        label="Window Strikes"
+        numTicks={yTicks}
+      />
       <AnimatedGrid columns={false} numTicks={4} />
       <AnimatedLineSeries dataKey="Window Strikes" data={data} {...accessors} />
       <Tooltip
@@ -45,4 +51,6 @@ export default function LineChart({ data, height }) {
 LineChart.propTypes = {
   data: PropTypes.array.isRequired,
   height: PropTypes.number.isRequired,
+  xTicks: PropTypes.number,
+  yTicks: PropTypes.number,
 };
