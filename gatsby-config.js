@@ -4,5 +4,6 @@ module.exports = {
     title: "Bird Safe Philly Viz",
   },
   plugins: [
+    'gatsby-plugin-postcss',
   ],
 };

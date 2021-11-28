@@ -4,251 +4,107 @@
  *
  */
 
-import * as React from "react"
-import { graphql } from 'gatsby'
+import * as React from 'react';
+import PropTypes from 'prop-types';
+import { graphql } from 'gatsby';
 import * as D3 from 'd3';
-import "../styles/index.css"
+import '../styles/index.css';
+import Layout from '../components/layout';
+import MainGraph from '../components/main-graph';
+import SpeciesGraph from '../components/species-graph';
 
 
-const getDateOfISOWeek = (w, y) => {
-    var simple = new Date(y, 0, 1 + (w - 1) * 7);
-    var dow = simple.getDay();
-    var ISOweekStart = simple;
-    if (dow <= 4)
-        ISOweekStart.setDate(simple.getDate() - simple.getDay() + 1);
-    else
-        ISOweekStart.setDate(simple.getDate() + 8 - simple.getDay());
-    return ISOweekStart;
+const parseDate = D3.timeParse('%Y-%m-%d');
+
+const densifyData = (data, xScale) => {
+  const dateGrouping = D3.timeDay;
+  const denseData = xScale.ticks(dateGrouping).map((d) => {
+    const found = data.find(e => e.date.getTime() === d.getTime());
+    return found || { date: d, count: 0 };
+  });
+  return denseData;
 };
 
-// markup
-const IndexPage = (props) => {
-  const observations = props.data.allObs.edges;
-  const groupedObs = props.data.grouped.group;
-
-  const margin = {top: 30, right: 140, bottom: 80, left: 60};
-  const width = 1490 - margin.left - margin.right;
-  const height = 440 - margin.top - margin.bottom;
-  const color =  "steelblue";
-
-  const parseDate = D3.timeParse("%Y-%m-%d");
-  const bisectDate = D3.bisector(d => d.weekYear).left;
-  const formatValue = D3.format(",");
-  const dateFormatter = D3.timeFormat("%m/%d/%y");
-
-  /*
-  const groupedMap = groupedObs.map(years => {
-    const year = years.fieldValue;
-    const dateCounts = years.group.map(weeks => {
-      const week = weeks.fieldValue;
-      const calcDate = getDateOfISOWeek(week, year);
-      const calcObj = { weekYear: calcDate, count: weeks.totalCount};
-      return calcObj;
-    });
-    return dateCounts;
-  });
-
-  const sortedData = groupedMap.flat().sort((a, b) => a.weekYear - b.weekYear);
-  */
-
-  const groupedMap2 = observations.reduce((r, a) => {
+const createDateGrouped = (data) => {
+  /* eslint-disable no-param-reassign */
+  const groupedMap2 = data.reduce((r, a) => {
     r[a.node.observed_on] = r[a.node.observed_on] || [];
     r[a.node.observed_on].push(a.node);
     return r;
   }, Object.create(null));
 
-  const groupedMap3 = Object.keys(groupedMap2).map(e => { return {
-    weekYear: parseDate(e),
+  const groupedMap3 = Object.keys(groupedMap2).map(e => ({
+    date: parseDate(e),
     count: groupedMap2[e].length,
     species: groupedMap2[e].reduce((r, a) => {
-      r[a.taxon.preferred_common_name] =  r[a.taxon.preferred_common_name] || [];
+      r[a.taxon.preferred_common_name] = r[a.taxon.preferred_common_name] || [];
       r[a.taxon.preferred_common_name].push(a.taxon);
       return r;
-    }, Object.create(null))
-  }; });
+    }, Object.create(null)),
+  }));
+  /* eslint-enable no-param-reassign */
 
-  const sortedData = groupedMap3.sort((a, b) => a.weekYear - b.weekYear);
-  console.log(sortedData);
+  const sortedData = groupedMap3.sort((a, b) => a.date - b.date);
+  return sortedData;
+};
 
-  const dates = sortedData.map(e => e.weekYear);
+const createSpeciesGrouped = (data, xScale) => {
+  /* eslint-disable no-param-reassign */
+  const speciesKey = data.reduce((r, a) => {
+    r[a.node.taxon.name] = r[a.node.taxon.name] || [];
+    r[a.node.taxon.name].push(a);
+    return r;
+  }, Object.create(null));
+
+  const groupedMap = Object.keys(speciesKey).map(e => ({
+    species: e,
+    count: speciesKey[e].length,
+    dates: densifyData(createDateGrouped(speciesKey[e]), xScale),
+    name: speciesKey[e][0].node.taxon.preferred_common_name || e,
+  })).sort((a, b) => b.count - a.count);
+  /* eslint-enable no-param-reassign */
+
+  return groupedMap;
+};
+
+
+// markup
+const IndexPage = (props) => {
+  const observations = props.data.allObs.edges;
+
+  const margin = {
+    top: 30, right: 140, bottom: 80, left: 60,
+  };
+  const width = 1490 - margin.left - margin.right;
+
+  const sortedData = createDateGrouped(observations);
+
+  const dates = sortedData.map(e => e.date);
   const xScale = D3.scaleTime().domain(D3.extent(dates)).range([0, width]);
 
-  const dateGrouping = D3.timeDay;
-  // const dateGrouping = D3.timeMonday // Use this is doing weeekly counts
-  const denseData = xScale.ticks(dateGrouping).map(d => {
-    const found = sortedData.find(e => e.weekYear.getTime() === d.getTime());
-    return found || { weekYear: d, count: 0 };
-  });
+  const denseData = densifyData(sortedData, xScale);
 
-  const counts = denseData.map(e => e.count);
-  const yScale = D3.scaleLinear().domain(D3.extent(counts)).range([height, 0]);
-
-  const linePath = D3
-    .line()
-    .x(d => xScale(d.weekYear))
-    .y(d => yScale(d.count))
-    .curve(D3.curveMonotoneX)
-
-  const xAxis = D3.axisBottom()
-    .scale(xScale)
-
-  const yAxis = D3.axisLeft()
-    .scale(yScale)
-
-  const mainRef = React.useRef();
-  const svgRef = React.useRef();
-  const tooltipRef = React.useRef();
-  const detailsRef = React.useRef();
-
-  React.useEffect(() => {
-    const tooltip = D3.select(tooltipRef.current)
-      .attr("class", "tooltip")
-      .style("position", "absolute")
-      .style("visibility", "hidden");
-
-    const details = D3.select(detailsRef.current)
-      .attr("class", "details")
-
-    const svg = D3.select(svgRef.current)
-      .append('g')
-      .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
-
-    svg.append("g")
-      .attr("transform", "translate(0," + height + ")")
-      .call(xAxis);
-
-    svg.append("g")
-      .attr("transform", "translate(0, 0)")
-      .attr("class", "y axis")
-      .call(yAxis)
-      .append("text")
-      .attr("transform", "rotate(-90)")
-      .attr("y", 6)
-      .attr("dy", ".71em")
-      .style("text-anchor", "end")
-      .text("Count");
-
-    svg
-      .append('path')
-      .datum(denseData)
-      .attr("fill", "none")
-      .attr("stroke", color)
-      .attr("stroke-width", 3)
-      .attr("d", linePath);
-
-    const focus = svg.append('g')
-      .attr("class", "focus")
-      .style("display", "none");
-
-    focus.append("circle")
-      .attr("r", 5);
-
-    focus.append("rect")
-      .attr("class", "tooltip")
-      .attr("width", 80)
-      .attr("height", 50)
-      .attr("x", 10)
-      .attr("y", -22)
-      .attr("rx", 4)
-      .attr("ry", 4);
-
-    focus.append("text")
-      .attr("class", "tooltip-date")
-      .attr("x", 18)
-      .attr("y", -2);
-
-    focus.append("text")
-      .attr("x", 18)
-      .attr("y", 18)
-      .text("Count:");
-
-    focus.append("text")
-      .attr("class", "tooltip-count")
-      .style('font-weight', 'bold')
-      .attr("x", 60)
-      .attr("y", 18);
-
-    svg.append("rect")
-      .attr("class", "overlay")
-      .attr("width", width)
-      .attr("height", height)
-      .on("mouseover", function() { focus.style("display", null); })
-      .on("mouseout", function() { focus.style("display", "none"); })
-      .on("mousemove", mousemove);
-
-    function mousemove(event) {
-      const x0 = xScale.invert(D3.pointer(event)[0]);
-      const i = bisectDate(denseData, x0, 1);
-      const d0 = denseData[i - 1];
-      const d1 = denseData[i];
-      const d = x0 - d0.weekYear > d1.weekYear - x0 ? d1 : d0;
-
-      focus.attr("transform", "translate(" + xScale(d.weekYear) + "," + yScale(d.count) + ")");
-      focus.select(".tooltip-date").text(dateFormatter(d.weekYear));
-      focus.select(".tooltip-count").text(formatValue(d.count));
-
-      const speciesLists = d.count > 0 && Object.keys(d.species)
-        .sort((a, b) => d.species[b].length - d.species[a].length)
-        .reduce((r, a) => r += `${a}: ${d.species[a].length}, `, "");
-      const speciesText = d.count > 0
-        ? (`Species: ${speciesLists.replace(/(,\s*$)/g, "")}`)
-        : "";
-
-      details.html("")
-        .append('div')
-        .html(`
-          <h5>${dateFormatter(d.weekYear)}</h5>
-          <p>Total: ${d.count}</p>
-          <p>${speciesText}</p>
-        `);
-    }
-
-    // Legend
-    svg.append("circle").attr("cx", 0).attr("cy", height + 30 ).attr("r", 6).style("fill", color);
-    svg.append("text").attr("x", 20).attr("y", height + 30).text("Total observations in project").style("font-size", "15px").attr("alignment-baseline","middle")
-
-  }, [mainRef.current]);
-
+  const speciesGrouped = createSpeciesGrouped(observations, xScale);
 
   return (
-    <main ref={mainRef}>
+    <main>
       <title>Bird Safe Philly Data Viz</title>
-      <h1>Bird Safe Philly Data Viz</h1>
-
-      <h5 style={{"margin-left": margin.left - 20, "margin-bottom": 0}}>Daily Window Strikes</h5>
-      <svg width={width + margin.left + margin.right} height={height + margin.top + margin.bottom} ref={svgRef}>
-      </svg>
-      <div ref={detailsRef}></div>
-
-      <div>
-        {observations.map((obs, i) => {
-          const obsData = obs.node;
-          return (
-            <div key={i}>
-              <p>Species: {obsData.taxon.preferred_common_name}</p>
-            </div>
-          )
-        })}
-      </div>
+      <Layout>
+        <MainGraph data={denseData}></MainGraph>
+        <SpeciesGraph data={speciesGrouped}></SpeciesGraph>
+      </Layout>
     </main>
   );
-}
+};
 
-export default IndexPage
+export default IndexPage;
+
+IndexPage.propTypes = {
+  data: PropTypes.object,
+};
 
 export const query = graphql`
-  query ObservationQuery {
-    grouped: allObservation(filter: {observed_on_details: {year: {gte: 2021}}}) {
-      totalCount
-      group(field: observed_on_details___year) {
-        totalCount
-        group(field: observed_on_details___week) {
-          totalCount
-          fieldValue
-        }
-        fieldValue
-      }
-    }
+  query ObservationQuery2 {
     allObs: allObservation(filter: {observed_on: {gte: "2021-01-01"}}) {
       edges {
         node {
@@ -278,39 +134,3 @@ export const query = graphql`
     }
   }
 `;
-
-// console.log(query);
-
-
-/*
-export const query = graphql`
-  query ObservationQuery {
-    allObservation(filter: {observed_on: {gte: "2020-01-01"}}) {
-      edges {
-        node {
-          observation_id
-          observed_on
-          observed_on_details {
-            date
-            week
-            month
-            hour
-            year
-            day
-          }
-          place_ids
-          taxon {
-            ancestor_ids
-            name
-            preferred_common_name
-          }
-          geojson {
-            coordinates
-            type
-          }
-          user
-        }
-      }
-    }
-  }
-`; */

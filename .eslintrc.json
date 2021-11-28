@@ -1,0 +1,38 @@
+{
+    "root": true,
+    "parser": "babel-eslint",
+    "env": {
+        "commonjs": true,
+        "es6": true,
+        "node": true,
+        "mocha": true
+    },
+    "extends": [
+      "airbnb-base",
+      "plugin:react/recommended"
+    ],
+    "globals": {
+        "Atomics": "readonly",
+        "SharedArrayBuffer": "readonly",
+        "expect": true
+    },
+    "parserOptions": {
+        "ecmaVersion": 2018
+    },
+    "rules": {
+      "prefer-arrow-callback": 0,
+      "no-unused-expressions": 0
+    },
+    "settings": {
+      "jsx": true
+    },
+    "overrides": [
+      {
+        "files": ["*-test.js","*.spec.js", "test/*.js"],
+        "rules": {
+          "no-unused-expressions": "off"
+        }
+      }
+    ],
+    "plugins": []
+}
