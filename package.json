@@ -16,7 +16,10 @@
     "deploy": "gatsby build --prefix-paths && gh-pages -d public"
   },
   "dependencies": {
+    "@visx/group": "^2.1.0",
     "@visx/react-spring": "^2.4.0",
+    "@visx/scale": "^2.2.2",
+    "@visx/shape": "^2.4.0",
     "@visx/xychart": "^2.5.0",
     "autoprefixer": "^10.4.0",
     "axios": "^0.24.0",

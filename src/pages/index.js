@@ -90,7 +90,7 @@ const IndexPage = (props) => {
     <main>
       <title>Bird Safe Philly Data Viz</title>
       <Layout>
-        <MainGraph data={denseData}></MainGraph>
+        <MainGraph lineData={denseData} pieData={speciesGrouped}></MainGraph>
         <SpeciesGraph data={speciesGrouped}></SpeciesGraph>
       </Layout>
     </main>
