@@ -4,7 +4,7 @@ import LineChart from './line-chart';
 
 export default function SpeciesGraph({ data }) {
   return (
-    <div className="grid grid-cols-3 gap-4">
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
       {data.map((species, index) => (
         index < 6 && (
           <div key={index}>

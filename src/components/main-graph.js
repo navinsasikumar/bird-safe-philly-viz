@@ -5,7 +5,7 @@ import PieChart from './pie-chart';
 
 export default function MainGraph({ lineData, pieData }) {
   return (
-    <div className="grid grid-cols-3 gap-4">
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
       <div className="col-span-2">
         <p className="pt-4 pl-8">Daily Window Strikes</p>
         <LineChart data={lineData} height={300}/>
