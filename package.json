@@ -16,6 +16,7 @@
     "deploy": "gatsby build --prefix-paths && gh-pages -d public"
   },
   "dependencies": {
+    "@visx/annotation": "^2.5.0",
     "@visx/group": "^2.1.0",
     "@visx/react-spring": "^2.4.0",
     "@visx/scale": "^2.2.2",

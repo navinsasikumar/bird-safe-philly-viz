@@ -13,7 +13,7 @@ export default function MainGraph({ lineData, pieData }) {
 
       <div>
         <p className="pt-4 pl-8">Species Composition</p>
-        <PieChart data={pieData} height={300} width={400}/>
+        <PieChart data={pieData} height={300} width={550}/>
       </div>
     </div>
   );

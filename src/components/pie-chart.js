@@ -4,6 +4,7 @@ import { animated, useTransition, interpolate } from 'react-spring';
 import Pie from '@visx/shape/lib/shapes/Pie';
 import { Group } from '@visx/group';
 import { scaleOrdinal } from '@visx/scale';
+import { Annotation, Label, Connector } from '@visx/annotation';
 
 
 export default function PieChart({
@@ -12,7 +13,7 @@ export default function PieChart({
   const [selectedSpecies, setSelectedSpecies] = React.useState(null);
 
   const margin = {
-    top: 20, right: 20, bottom: 20, left: 20,
+    top: 20, right: 20, bottom: 50, left: 20,
   };
   const innerWidth = width - margin.left - margin.right;
   const innerHeight = height - margin.top - margin.bottom;
@@ -76,6 +77,8 @@ export default function PieChart({
                setSelectedSpecies(selectedSpecies && selectedSpecies === species ? null : species)
              }
              getColor={(arc) => getSpeciesColor(arc.data.species)}
+             width={width}
+             height={height}
            />
          )}
         </Pie>
@@ -112,6 +115,8 @@ function AnimatedPie({
   getKey,
   getColor,
   onClickDatum,
+  width,
+  height,
 }) {
   const transitions = useTransition(arcs, {
     from: animate ? fromLeaveTransition : enterUpdateTransition,
@@ -120,10 +125,11 @@ function AnimatedPie({
     leave: animate ? fromLeaveTransition : enterUpdateTransition,
     keys: getKey,
   });
+  const targetLabelOffset = (width / 2) * 0.6;
+
   return transitions((props, arc, { key }) => {
     const [centroidX, centroidY] = path.centroid(arc);
-    const hasSpaceForLabel = arc.endAngle - arc.startAngle >= 0.1;
-    console.log(`${centroidX}, ${centroidY}`);
+    const hasSpaceForLabel = arc.endAngle - arc.startAngle >= 0.25;
 
     return (
       <g key={key}>
@@ -142,22 +148,42 @@ function AnimatedPie({
         />
         {hasSpaceForLabel && (
           <animated.g style={{ opacity: props.opacity }}>
-            <text
-              fill="#495057"
+            <Annotation
               x={centroidX}
               y={centroidY}
-              dy=".33em"
-              fontSize={11}
-              textAnchor="middle"
-              pointerEvents="none"
+              dx={
+                // offset label to a constant left- or right-coordinate
+                (centroidX < 0 ? -targetLabelOffset : targetLabelOffset) -
+                centroidX
+              }
+              dy={centroidY < 0 ? -50 : 50}
             >
-              {getKey(arc)}
-            </text>
+              <Label
+                showAnchorLine={false}
+                anchorLineStroke="#495057"
+                showBackground={false}
+                title={getKey(arc)}
+                fontColor="#495057"
+                titleFontSize={11}
+                width={100}
+                // these will work in @visx/annotation@1.4
+                // see https://github.com/airbnb/visx/pull/989
+                // horizontalAnchor={centroidX < 0 ? 'end' : 'start'}
+                // backgroundPadding={{
+                //   left: 8,
+                //   right: 8,
+                //   top: 0,
+                //   bottom: 0
+                // }}
+              />
+              <Connector stroke="#495057" />
+            </Annotation>
           </animated.g>
         )}
       </g>
     );
   });
+
 }
 
 AnimatedPie.propTypes = {
