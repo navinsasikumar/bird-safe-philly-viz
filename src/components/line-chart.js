@@ -8,7 +8,8 @@ import {
   XYChart,
   Tooltip,
 } from '@visx/xychart';
-
+import { scaleOrdinal } from '@visx/scale';
+import { LegendOrdinal } from '@visx/legend';
 
 const accessors = {
   xAccessor: d => d.date,
@@ -18,7 +19,26 @@ const accessors = {
 export default function LineChart({
   data, height, xTicks, yTicks,
 }) {
+  const total = data.reduce((a, r) => a + r.count, 0);
+  const totalScale = scaleOrdinal({
+    domain: [`Total: ${total}`],
+    range: ['#0b7285'],
+  });
+
   return (
+    <>
+    <div
+      style={{
+        display: 'flex',
+        justifyContent: 'right',
+        fontSize: '12px',
+        marginRight: '40px',
+        position: 'relative',
+        top: '40px',
+      }}
+    >
+      <LegendOrdinal scale={totalScale} direction="row" labelMargin="0 15px 0 0 " />
+    </div>
     <XYChart height={height} xScale={{ type: 'time' }} yScale={{ type: 'linear' }}>
       <AnimatedAxis orientation="bottom" label="Dates" numTicks={xTicks} />
       <AnimatedAxis
@@ -45,6 +65,7 @@ export default function LineChart({
         )}
       />
     </XYChart>
+    </>
   );
 }
 

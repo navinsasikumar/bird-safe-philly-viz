@@ -19,6 +19,7 @@
     "@visx/annotation": "^2.5.0",
     "@visx/event": "^2.1.2",
     "@visx/group": "^2.1.0",
+    "@visx/legend": "^2.2.2",
     "@visx/react-spring": "^2.4.0",
     "@visx/scale": "^2.2.2",
     "@visx/shape": "^2.4.0",
