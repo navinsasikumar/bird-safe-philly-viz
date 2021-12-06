@@ -17,10 +17,12 @@
   },
   "dependencies": {
     "@visx/annotation": "^2.5.0",
+    "@visx/event": "^2.1.2",
     "@visx/group": "^2.1.0",
     "@visx/react-spring": "^2.4.0",
     "@visx/scale": "^2.2.2",
     "@visx/shape": "^2.4.0",
+    "@visx/tooltip": "^2.2.2",
     "@visx/xychart": "^2.5.0",
     "autoprefixer": "^10.4.0",
     "axios": "^0.24.0",

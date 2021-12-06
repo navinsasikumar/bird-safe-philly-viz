@@ -5,6 +5,8 @@ import Pie from '@visx/shape/lib/shapes/Pie';
 import { Group } from '@visx/group';
 import { scaleOrdinal } from '@visx/scale';
 import { Annotation, Label, Connector } from '@visx/annotation';
+import { useTooltip, useTooltipInPortal, Tooltip } from '@visx/tooltip';
+import { localPoint } from '@visx/event';
 
 
 export default function PieChart({
@@ -55,36 +57,74 @@ export default function PieChart({
     ],
   });
 
+
+  const {
+    tooltipData,
+    tooltipLeft,
+    tooltipTop,
+    tooltipOpen,
+    showTooltip,
+    hideTooltip,
+  } = useTooltip();
+
   return (
-    <svg width={width} height={height}>
-      <Group top={centerY + margin.top} left={centerX + margin.left}>
+    <>
+      <svg width={width} height={height}>
+        <Group top={centerY + margin.top} left={centerX + margin.left}>
 
-        <Pie
-          data={cutoffData}
-          pieValue={count}
-          outerRadius={radius}
-          innerRadius={radius - donutThickness}
-          cornerRadius={3}
-          padAngle={0.005}
+          <Pie
+            data={cutoffData}
+            pieValue={count}
+            outerRadius={radius}
+            innerRadius={radius - donutThickness}
+            cornerRadius={3}
+            padAngle={0.005}
+          >
+           {(pie) => (
+             <AnimatedPie
+               {...pie}
+               animate={animate}
+               getKey={(arc) => arc.data.name}
+               onClickDatum={({ data: { species } }) =>
+                 animate &&
+                 setSelectedSpecies(selectedSpecies && selectedSpecies === species ? null : species)
+               }
+               getColor={(arc) => getSpeciesColor(arc.data.species)}
+               width={width}
+               height={height}
+               onMouseOverDatum={(event, arc) => {
+                 const coords = localPoint(event.target.ownerSVGElement, event);
+                 const boundingRect = event.target.ownerSVGElement.getBoundingClientRect();
+                 showTooltip({
+                   tooltipLeft: coords.x + boundingRect.x,
+                   tooltipTop: coords.y + boundingRect.y,
+                   tooltipData: arc.data
+                 });
+               }}
+               onMouseOutDatum={hideTooltip}
+             />
+           )}
+          </Pie>
+
+        </Group>
+      </svg>
+
+      {tooltipOpen && (
+        <Tooltip
+          // set this to random so it correctly updates with parent bounds
+          key={Math.random()}
+          top={tooltipTop}
+          left={tooltipLeft}
         >
-         {(pie) => (
-           <AnimatedPie
-             {...pie}
-             animate={animate}
-             getKey={(arc) => arc.data.name}
-             onClickDatum={({ data: { species } }) =>
-               animate &&
-               setSelectedSpecies(selectedSpecies && selectedSpecies === species ? null : species)
-             }
-             getColor={(arc) => getSpeciesColor(arc.data.species)}
-             width={width}
-             height={height}
-           />
-         )}
-        </Pie>
-
-      </Group>
-    </svg>
+          <div>
+            <strong>{tooltipData.name}</strong>
+          </div>
+          <div>
+            Count: {tooltipData.count}
+          </div>
+        </Tooltip>
+      )}
+    </>
   );
 }
 
@@ -117,6 +157,8 @@ function AnimatedPie({
   onClickDatum,
   width,
   height,
+  onMouseOverDatum,
+  onMouseOutDatum,
 }) {
   const transitions = useTransition(arcs, {
     from: animate ? fromLeaveTransition : enterUpdateTransition,
@@ -145,6 +187,8 @@ function AnimatedPie({
           fill={getColor(arc)}
           onClick={() => onClickDatum(arc)}
           onTouchStart={() => onClickDatum(arc)}
+          onMouseOver={(event) => onMouseOverDatum(event, arc) }
+          onMouseOut={() => onMouseOutDatum() }
         />
         {hasSpaceForLabel && (
           <animated.g style={{ opacity: props.opacity }}>
@@ -192,4 +236,6 @@ AnimatedPie.propTypes = {
   getColor: PropTypes.func.isRequired,
   onClickDatum: PropTypes.func.isRequired,
   delay: PropTypes.number,
+  onMouseOverDatum: PropTypes.func,
+  onMouseOutDatum: PropTypes.func,
 };
