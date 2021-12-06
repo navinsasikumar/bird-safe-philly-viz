@@ -16,6 +16,15 @@ const accessors = {
   yAccessor: d => d.count,
 };
 
+const getSpeciesListforDay = (speciesList) => {
+  if (!speciesList) return '';
+  const arr = Object.keys(speciesList).map(species => (
+    { species, count: speciesList[species].length }
+  ));
+  const sorted = arr.sort((a, b) => b.count - a.count);
+  return sorted.map(k => `${k.species}: ${k.count}`).join(', ');
+};
+
 export default function LineChart({
   data, height, xTicks, yTicks,
 }) {
@@ -61,6 +70,9 @@ export default function LineChart({
             {format(accessors.xAccessor(tooltipData.nearestDatum.datum), 'MMM d')}
             {': '}
             {accessors.yAccessor(tooltipData.nearestDatum.datum)}
+            <div>
+              {getSpeciesListforDay(data[tooltipData.nearestDatum.index].species)}
+            </div>
           </div>
         )}
       />
