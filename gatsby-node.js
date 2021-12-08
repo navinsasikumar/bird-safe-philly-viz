@@ -46,7 +46,9 @@ exports.sourceNodes = async ({ actions }) => {
         preferred_common_name: observation.taxon.preferred_common_name,
       },
       geojson: observation.geojson,
-      user: observation.user.login
+      user: observation.user.login,
+      annotations: observation.annotations,
+      ofvs: observation.ofvs,
       // etc...
     }
 

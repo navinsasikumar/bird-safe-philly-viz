@@ -12,6 +12,7 @@ import '../styles/index.css';
 import Layout from '../components/layout';
 import MainGraph from '../components/main-graph';
 import SpeciesGraph from '../components/species-graph';
+import ObsFieldsGraph from '../components/obs-fields-graph';
 
 
 const parseDate = D3.timeParse('%Y-%m-%d');
@@ -20,7 +21,7 @@ const densifyData = (data, xScale) => {
   const dateGrouping = D3.timeDay;
   const denseData = xScale.ticks(dateGrouping).map((d) => {
     const found = data.find(e => e.date.getTime() === d.getTime());
-    return found || { date: d, count: 0 };
+    return found || { date: d, count: 0, dead: 0, alive: 0 };
   });
   return denseData;
 };
@@ -41,6 +42,8 @@ const createDateGrouped = (data) => {
       r[a.taxon.preferred_common_name].push(a.taxon);
       return r;
     }, Object.create(null)),
+    dead: groupedMap2[e].filter(elem => elem.ofvs.some(field => field.value.toLowerCase() === 'dead') || elem.annotations.some(field => field.controlled_value_id === 19)).length || 0,
+    alive: groupedMap2[e].filter(elem => elem.ofvs.some(field => field.value.toLowerCase() === 'alive/stunned') || elem.annotations.some(field => field.controlled_value_id === 18)).length || 0,
   }));
   /* eslint-enable no-param-reassign */
 
@@ -83,6 +86,7 @@ const IndexPage = (props) => {
   const xScale = D3.scaleTime().domain(D3.extent(dates)).range([0, width]);
 
   const denseData = densifyData(sortedData, xScale);
+  console.log(denseData);
 
   const speciesGrouped = createSpeciesGrouped(observations, xScale);
 
@@ -91,6 +95,7 @@ const IndexPage = (props) => {
       <title>Bird Safe Philly Data Viz</title>
       <Layout>
         <MainGraph lineData={denseData} pieData={speciesGrouped}></MainGraph>
+        <ObsFieldsGraph lineData={denseData}></ObsFieldsGraph>
         <SpeciesGraph data={speciesGrouped}></SpeciesGraph>
       </Layout>
     </main>
@@ -129,6 +134,14 @@ export const query = graphql`
             type
           }
           user
+          annotations {
+            controlled_attribute_id
+            controlled_value_id
+          }
+          ofvs {
+            name
+            value
+          }
         }
       }
     }
