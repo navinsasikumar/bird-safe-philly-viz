@@ -1,8 +1,9 @@
 import * as React from 'react';
 import PropTypes from 'prop-types';
 import DeadAliveBarChart from './dead-alive-bar-chart';
+import ObsFieldsBarGroup from './obs-fields-bar-group';
 
-export default function ObsFieldsGraph({ lineData }) {
+export default function ObsFieldsGraph({ lineData, obsFieldsData }) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
       <div>
@@ -12,11 +13,20 @@ export default function ObsFieldsGraph({ lineData }) {
           height={300}
         />
       </div>
+
+      <div>
+        <p className="pt-4 pl-8">Observation Fields</p>
+        <ObsFieldsBarGroup
+          data={obsFieldsData}
+          height={300}
+        />
+      </div>
     </div>
   );
 }
 
 ObsFieldsGraph.propTypes = {
   lineData: PropTypes.array.isRequired,
+  obsFieldsData: PropTypes.array.isRequired,
   height: PropTypes.number,
 };

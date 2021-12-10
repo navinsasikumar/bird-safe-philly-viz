@@ -70,10 +70,40 @@ const createSpeciesGrouped = (data, xScale) => {
   return groupedMap;
 };
 
+const createObsFieldsGrouped = (data, xScale) => {
+  /* eslint-disable no-param-reassign */
+  const obsFieldsKey = data.reduce((r, a) => {
+    const ofvs = a.node.ofvs;
+    ofvs.forEach(field => {
+      r[field.name] = r[field.name] || {};
+      r[field.name][field.value] = r[field.name][field.value] + 1 || 1;
+    });
+    return r;
+  }, Object.create(null));
+  console.log(obsFieldsKey);
+
+  const fieldsToFilter = ['Skies?', 'Wind?', 'Precipitation?', 'Location?'];
+
+  const groupedMap = Object.keys(obsFieldsKey)
+    .filter(e => fieldsToFilter.includes(e))
+    .map(e => {
+      const obj = {
+        field: e,
+      };
+      Object.keys(obsFieldsKey[e]).forEach(v => obj[v] = obsFieldsKey[e][v]);
+      return obj;
+    });
+  console.log(groupedMap);
+  /* eslint-enable no-param-reassign */
+
+  return groupedMap;
+};
+
 
 // markup
 const IndexPage = (props) => {
   const observations = props.data.allObs.edges;
+  console.log(observations);
 
   const margin = {
     top: 30, right: 140, bottom: 80, left: 60,
@@ -88,13 +118,14 @@ const IndexPage = (props) => {
   const denseData = densifyData(sortedData, xScale);
 
   const speciesGrouped = createSpeciesGrouped(observations, xScale);
+  const obsFieldsGrouped = createObsFieldsGrouped(observations, xScale);
 
   return (
     <main>
       <title>Bird Safe Philly Data Viz</title>
       <Layout>
         <MainGraph lineData={denseData} pieData={speciesGrouped}></MainGraph>
-        <ObsFieldsGraph lineData={denseData}></ObsFieldsGraph>
+        <ObsFieldsGraph lineData={denseData} obsFieldsData={obsFieldsGrouped}></ObsFieldsGraph>
         <SpeciesGraph data={speciesGrouped}></SpeciesGraph>
       </Layout>
     </main>
