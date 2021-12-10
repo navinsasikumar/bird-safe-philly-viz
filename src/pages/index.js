@@ -86,7 +86,6 @@ const IndexPage = (props) => {
   const xScale = D3.scaleTime().domain(D3.extent(dates)).range([0, width]);
 
   const denseData = densifyData(sortedData, xScale);
-  console.log(denseData);
 
   const speciesGrouped = createSpeciesGrouped(observations, xScale);
 
