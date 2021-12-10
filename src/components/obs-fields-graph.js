@@ -16,10 +16,29 @@ export default function ObsFieldsGraph({ lineData, obsFieldsData }) {
 
       <div>
         <p className="pt-4 pl-8">Observation Fields</p>
-        <ObsFieldsBarGroup
-          data={obsFieldsData}
-          height={300}
-        />
+        <div className="grid grid-cols-2 md:grid-cols-4">
+          <ObsFieldsBarGroup
+            data={obsFieldsData}
+            field={'Skies?'}
+            first={true}
+            height={300}
+          />
+          <ObsFieldsBarGroup
+            data={obsFieldsData}
+            field={'Wind?'}
+            height={300}
+          />
+          <ObsFieldsBarGroup
+            data={obsFieldsData}
+            field={'Precipitation?'}
+            height={300}
+          />
+          <ObsFieldsBarGroup
+            data={obsFieldsData}
+            field={'Location?'}
+            height={300}
+          />
+        </div>
       </div>
     </div>
   );

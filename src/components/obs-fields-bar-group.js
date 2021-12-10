@@ -11,42 +11,50 @@ import {
 import { scaleOrdinal } from '@visx/scale';
 import { LegendOrdinal } from '@visx/legend';
 
-const fieldKeys = [
-  'Partly Cloudy', 'Cloudy', 'Sunny, Clear',
-  'Calm', 'Slight Breeze', 'Windy',
-  'Fog, Mist', 'Heavy Rain', 'Light Rain', 'None',
-  'Ground', 'Street', 'Window Sill',
-];
-const accessors = {
-  x: {},
-  y: {},
-};
-fieldKeys.forEach(k => {
-  accessors.x[k] = d => d.field;
-  accessors.y[k] = d => d[k];
-})
-
 export default function ObsFieldsBarGroup({
   data, height, showGridColumns, showGridRows, animationTrajectory,
   numTicks, showHorizontalCrosshair, showVerticalCrosshair, sharedTooltip,
+  field, first,
 }) {
+  const filteredData = data.filter(e => e.field === field);
+  const fieldVals = Object.keys(filteredData[0]).filter(e => e !== 'field' && e !== 'Unknown');
 
-  console.log(data);
+  const accessors = {
+    x: {},
+    y: {},
+  };
+  fieldVals.forEach((k) => {
+    accessors.x[k] = d => d.field;
+    accessors.y[k] = d => d[k];
+  });
 
-  // const totalDead = data.reduce((a, r) => a + r.dead, 0);
-  // const totalAlive = data.reduce((a, r) => a + r.alive, 0);
-  // const totalScale = scaleOrdinal({
-    // domain: [`Dead: ${totalDead}`, `Alive: ${totalAlive}`],
-    // range: ['#0b7285', '#66d9e8'],
-  // });
+  const totalScale = scaleOrdinal({
+    domain: fieldVals.map(e => `${e}: ${filteredData[0][e]}`),
+    range: ['#0b7285', '#66d9e8'],
+  });
 
   return (
     <>
+      {/** counts
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'right',
+            fontSize: '12px',
+            marginRight: '40px',
+            position: 'relative',
+            top: '40px',
+          }}
+        >
+          <LegendOrdinal scale={totalScale} direction="row" labelMargin="0 15px 0 0 " />
+        </div>
+      */}
 
       <XYChart
         xScale={{ type: 'band', paddingInner: 0.3 }}
         yScale={{ type: 'linear' }}
         height={Math.min(400, height)}
+        width={230}
       >
         <Grid
           key={`grid-${animationTrajectory}`} // force animate on update
@@ -56,28 +64,70 @@ export default function ObsFieldsBarGroup({
           numTicks={numTicks}
         />
         <BarGroup>
-          {fieldKeys.map(k => {
-            console.log(k);
-            if (accessors.x[k]) { 
+          {fieldVals.map((k) => {
+            if (accessors.x[k]) {
               return (
                 <BarSeries
                   dataKey={k}
-                  data={data}
+                  data={filteredData}
                   xAccessor={accessors.x[k]}
                   yAccessor={accessors.y[k]}
                 />
-              )
+              );
             }
+            return (<div key={k}></div>);
           })}
         </BarGroup>
 
         <Axis
           orientation="bottom"
-          label="Dates"
+          label={field}
+          numTicks={0}
         />
         <Axis
           orientation="left"
-          label="Window Strikes"
+          label={ first ? 'Window Strikes' : '' }
+        />
+
+        <Tooltip
+          showHorizontalCrosshair={showHorizontalCrosshair}
+          showVerticalCrosshair={showVerticalCrosshair}
+          snapTooltipToDatumX
+          snapTooltipToDatumY
+          showSeriesGlyphs={sharedTooltip}
+          renderTooltip={({ tooltipData, colorScale }) => (
+            <>
+              {/** counts */}
+              {(
+                (sharedTooltip
+                  ? Object.keys(tooltipData?.datumByKey ?? {})
+                  : [tooltipData?.nearestDatum?.key]
+                ).filter(status => status)
+              ).map((status) => {
+                const count = tooltipData?.nearestDatum?.datum
+                  && accessors.y[status](
+                    tooltipData?.nearestDatum?.datum,
+                  );
+
+                return (
+                  <div key={status}>
+                    <em
+                      style={{
+                        color: colorScale?.(status),
+                        textDecoration:
+                          tooltipData?.nearestDatum?.key === status ? 'underline' : undefined,
+                      }}
+                    >
+                      {status}
+                    </em>{' '}
+                    {count == null || Number.isNaN(count)
+                      ? '–'
+                      : `${count}`}
+                  </div>
+                );
+              })}
+            </>
+          )}
         />
 
       </XYChart>
@@ -95,6 +145,8 @@ ObsFieldsBarGroup.propTypes = {
   showVerticalCrosshair: PropTypes.bool,
   showHorizontalCrosshair: PropTypes.bool,
   sharedTooltip: PropTypes.bool,
+  field: PropTypes.string.isRequired,
+  first: PropTypes.bool,
 };
 
 ObsFieldsBarGroup.defaultProps = {
@@ -102,7 +154,7 @@ ObsFieldsBarGroup.defaultProps = {
   showGridRows: true,
   animationTrajectory: 'center',
   numTicks: 4,
-  showVerticalCrosshair: true,
+  showVerticalCrosshair: false,
   showHorizontalCrosshair: false,
-  sharedTooltip: true,
+  sharedTooltip: false,
 };
