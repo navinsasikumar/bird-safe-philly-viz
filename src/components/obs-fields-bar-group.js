@@ -30,26 +30,11 @@ export default function ObsFieldsBarGroup({
 
   const totalScale = scaleOrdinal({
     domain: fieldVals.map(e => `${e}: ${filteredData[0][e]}`),
-    range: ['#0b7285', '#66d9e8'],
+    range: ['#0b7285', '#66d9e8', '#fcc419', '#ff8787'],
   });
 
   return (
-    <>
-      {/** counts
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'right',
-            fontSize: '12px',
-            marginRight: '40px',
-            position: 'relative',
-            top: '40px',
-          }}
-        >
-          <LegendOrdinal scale={totalScale} direction="row" labelMargin="0 15px 0 0 " />
-        </div>
-      */}
-
+    <div>
       <XYChart
         xScale={{ type: 'band', paddingInner: 0.3 }}
         yScale={{ type: 'linear' }}
@@ -131,7 +116,10 @@ export default function ObsFieldsBarGroup({
         />
 
       </XYChart>
-    </>
+      <div style={{ fontSize: '10px', width: '230px', paddingLeft: '50px' }}>
+        <LegendOrdinal scale={totalScale} direction="row" labelMargin="0 5px 0 0 " shapeHeight="15px" shapeWidth="5px" />
+      </div>
+    </div>
   );
 }
 
